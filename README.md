@@ -1,3 +1,6 @@
+**WIP: The latest stable version is currently unusable. We will resume updating this repository after a new version is released. This repository is currently unavailable.**
+
+
 # LauncherX-Nix
 
 This repo packages prebuilt LauncherX binaries from Corona Studio's build API as Nix packages.
