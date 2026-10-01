@@ -37,15 +37,15 @@ launcherx.packages.${system}.win-x64
 launcherx.packages.${system}.win-arm64
 ```
 
-| Attribute | Runtime | Notes |
-| --- | --- | --- |
-| `launcherx` / `default` | auto | Picked from the host platform |
-| `linux-x64` | `linux-x64` | patchelf + UPX-decompressed |
-| `linux-arm64` | `linux-arm64` | patchelf + UPX-decompressed |
-| `osx-x64` | `osx-x64` | `.app` bundle |
-| `osx-arm64` | `osx-arm64` | `.app` bundle |
-| `win-x64` | `win-x64` | unpacked only, for distribution |
-| `win-arm64` | `win-arm64` | unpacked only, for distribution |
+| Attribute               | Runtime       | Notes                           |
+| ----------------------- | ------------- | ------------------------------- |
+| `launcherx` / `default` | auto          | Picked from the host platform   |
+| `linux-x64`             | `linux-x64`   | patchelf + UPX-decompressed     |
+| `linux-arm64`           | `linux-arm64` | patchelf + UPX-decompressed     |
+| `osx-x64`               | `osx-x64`     | `.app` bundle                   |
+| `osx-arm64`             | `osx-arm64`   | `.app` bundle                   |
+| `win-x64`               | `win-x64`     | unpacked only, for distribution |
+| `win-arm64`             | `win-arm64`   | unpacked only, for distribution |
 
 The Linux binaries are UPX-compressed upstream; this flake decompresses them and
 patches the interpreter and rpath so they run out-of-the-box on NixOS.

@@ -1,32 +1,33 @@
-{ lib
-, stdenv
-, stdenvNoCC
-, fetchurl
-, makeWrapper
-, unzip
-, upx
-, patchelf
-, icu
-, fontconfig
-, freetype
-, libGL
-, libICE
-, libSM
-, libX11
-, libXcursor
-, libXdamage
-, libXext
-, libXfixes
-, libXi
-, libXinerama
-, libXrandr
-, libXrender
-, libxcb
-, libxkbcommon
-, mesa
-, openssl
-, wayland
-, runtime ? null
+{
+  lib,
+  stdenv,
+  stdenvNoCC,
+  fetchurl,
+  makeWrapper,
+  unzip,
+  upx,
+  patchelf,
+  icu,
+  fontconfig,
+  freetype,
+  libGL,
+  libICE,
+  libSM,
+  libX11,
+  libXcursor,
+  libXdamage,
+  libXext,
+  libXfixes,
+  libXi,
+  libXinerama,
+  libXrandr,
+  libXrender,
+  libxcb,
+  libxkbcommon,
+  mesa,
+  openssl,
+  wayland,
+  runtime ? null,
 }:
 
 let
@@ -72,16 +73,20 @@ let
   };
 
   defaultRuntime =
-    if stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isx86_64 then "linux-x64" else
-    if stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isAarch64 then "linux-arm64" else
-    if stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64 then "osx-x64" else
-    if stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64 then "osx-arm64" else
-    null;
+    if stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isx86_64 then
+      "linux-x64"
+    else if stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isAarch64 then
+      "linux-arm64"
+    else if stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64 then
+      "osx-x64"
+    else if stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64 then
+      "osx-arm64"
+    else
+      null;
 
   runtime' = if runtime == null then defaultRuntime else runtime;
   build =
-    if runtime' == null then null
-    else builds.${runtime'} or (throw "Unknown runtime: ${runtime'}");
+    if runtime' == null then null else builds.${runtime'} or (throw "Unknown runtime: ${runtime'}");
 
   # Platforms that have a matching native prebuilt binary (for auto-detection).
   nativePlatforms = [
@@ -139,7 +144,13 @@ else
     ];
 
     # Generic upstream linux binaries need a proper dynamic linker + rpath on NixOS.
-    rpath = lib.makeLibraryPath ([ stdenv.cc.cc.lib stdenv.cc.libc ] ++ runtimeLibs);
+    rpath = lib.makeLibraryPath (
+      [
+        stdenv.cc.cc.lib
+        stdenv.cc.libc
+      ]
+      ++ runtimeLibs
+    );
     interpreter = stdenv.cc.bintools.dynamicLinker;
   in
   stdenvNoCC.mkDerivation {
@@ -151,7 +162,14 @@ else
     # because the app dlopens some libs (e.g. ICU, OpenSSL, X11) at runtime, so
     # stdenv's rpath shrinking would incorrectly prune them.
     dontPatchELF = true;
-    nativeBuildInputs = [ unzip ] ++ lib.optionals (build.kind == "linux") [ patchelf makeWrapper upx ];
+    nativeBuildInputs = [
+      unzip
+    ]
+    ++ lib.optionals (build.kind == "linux") [
+      patchelf
+      makeWrapper
+      upx
+    ];
 
     installPhase =
       if build.kind == "linux" then
