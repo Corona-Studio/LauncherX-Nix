@@ -64,7 +64,6 @@ let
     wayland
   ];
 
-  # Generic upstream linux binaries need a proper dynamic linker + rpath on NixOS.
   rpath = lib.makeLibraryPath (
     [
       stdenv.cc.cc.lib
@@ -93,19 +92,13 @@ stdenvNoCC.mkDerivation {
     mkdir -p "$out/opt/launcherx" "$out/bin"
     unzip -q "${zip}" -d "$out/opt/launcherx"
     chmod +x "$out/opt/launcherx/LauncherX"
-
-    # Upstream ships UPX-compressed binaries, which have no section headers
-    # and cannot be patched. Decompress first so patchelf works.
     upx -d "$out/opt/launcherx/LauncherX"
 
-    # Make the upstream binary runnable on NixOS.
     patchelf \
       --set-interpreter "${interpreter}" \
       --set-rpath "${rpath}" \
       "$out/opt/launcherx/LauncherX"
 
-    # NativeAOT apps dlopen some libs (ICU, OpenSSL, X11) at runtime; keep a
-    # broad LD_LIBRARY_PATH as a safety net in addition to the rpath.
     makeWrapper "$out/opt/launcherx/LauncherX" "$out/bin/launcherx" \
       --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath runtimeLibs}"
 
