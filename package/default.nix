@@ -96,9 +96,7 @@ let
     homepage = "https://github.com/Corona-Studio/LauncherX";
     license = lib.licenses.mit;
     mainProgram = "launcherx";
-    # Explicit `runtime` overrides build anywhere (fetch + unzip + patch);
-    # the auto-detected default only exists on native platforms.
-    platforms = if runtime == null then nativePlatforms else lib.platforms.all;
+    platforms = nativePlatforms;
   };
 in
 if build == null then
