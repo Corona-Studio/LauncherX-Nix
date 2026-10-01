@@ -26,9 +26,8 @@
 , mesa
 , openssl
 , wayland
+, runtime ? null
 }:
-
-{ runtime ? null }:
 
 let
   # Pinned build artifacts (zip) for each runtime.
@@ -121,8 +120,8 @@ stdenvNoCC.mkDerivation {
 
   dontUnpack = true;
   # We patch ELF binaries ourselves (interpreter + rpath) and keep the full rpath
-  # because .NET loads some libs (e.g. ICU) via dlopen, so stdenv's rpath
-  # shrinking would incorrectly prune them.
+  # because the app dlopens some libs (e.g. ICU, OpenSSL, X11) at runtime, so
+  # stdenv's rpath shrinking would incorrectly prune them.
   dontPatchELF = true;
   nativeBuildInputs = [ unzip ] ++ lib.optionals (build.kind == "linux") [ patchelf makeWrapper upx ];
 
@@ -135,8 +134,8 @@ stdenvNoCC.mkDerivation {
         unzip -q "${zip}" -d "$out/opt/launcherx"
         chmod +x "$out/opt/launcherx/LauncherX"
 
-        # Upstream now ships UPX-compressed binaries, which have no section
-        # headers and cannot be patched. Decompress first so patchelf works.
+        # Upstream ships UPX-compressed binaries, which have no section headers
+        # and cannot be patched. Decompress first so patchelf works.
         upx -d "$out/opt/launcherx/LauncherX"
 
         # Make the upstream binary runnable on NixOS.
@@ -145,11 +144,9 @@ stdenvNoCC.mkDerivation {
           --set-rpath "${rpath}" \
           "$out/opt/launcherx/LauncherX"
 
-        # The app is a .NET single-file; it extracts native deps at runtime.
-        # Provide a stable extract dir and a broad LD_LIBRARY_PATH for dlopen.
+        # NativeAOT apps dlopen some libs (ICU, OpenSSL, X11) at runtime; keep a
+        # broad LD_LIBRARY_PATH as a safety net in addition to the rpath.
         makeWrapper "$out/opt/launcherx/LauncherX" "$out/bin/launcherx" \
-          --run 'export DOTNET_BUNDLE_EXTRACT_BASE_DIR="$HOME/.cache/launcherx/${version}-${runtime'}"' \
-          --run 'mkdir -p "$DOTNET_BUNDLE_EXTRACT_BASE_DIR"' \
           --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath runtimeLibs}"
 
         runHook postInstall
@@ -173,7 +170,9 @@ stdenvNoCC.mkDerivation {
 
   meta = {
     description = "LauncherX prebuilt binaries";
+    homepage = "https://github.com/Corona-Studio/LauncherX";
     license = lib.licenses.mit;
+    mainProgram = "launcherx";
     platforms = lib.platforms.all;
   };
 }

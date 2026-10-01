@@ -1,38 +1,62 @@
-**WIP: The latest stable version is currently unusable. We will resume updating this repository after a new version is released. This repository is currently unavailable.**
-
-
 # LauncherX-Nix
 
-This repo packages prebuilt LauncherX binaries from Corona Studio's build API as Nix packages.
+Nix packaging for [LauncherX](https://github.com/Corona-Studio/LauncherX) prebuilt binaries, downloaded from Corona Studio's build API and patched to run on Nix/NixOS.
 
-## Build
+## Adding as a flake input
 
-If network is unreliable, use your proxy wrapper for the nix daemon, for example:
-
-```bash
-my-proxies-with for-nix-daemon nix build -L .
+```nix
+{
+  inputs = {
+    launcherx.url = "github:yueyinqiu/LauncherX-Nix";
+  };
+}
 ```
 
-Traditional (non-flake) usage:
+## Package
 
-```bash
-nix-build -A launcherx
+The default package (`launcherx`) auto-selects the runtime matching your platform:
+
+```nix
+launcherx.packages.${system}.launcherx
 ```
 
-Flake usage:
+Or try it directly from the CLI:
 
-```bash
-nix build -L .#launcherx
+```console
+$ nix shell github:yueyinqiu/LauncherX-Nix
 ```
 
-Build a specific runtime artifact:
+Each runtime is also pinned individually:
 
-```bash
-nix build -L .#linux-x64
-nix build -L .#osx-arm64
-nix build -L .#win-x64
+```nix
+launcherx.packages.${system}.linux-x64
+launcherx.packages.${system}.linux-arm64
+launcherx.packages.${system}.osx-x64
+launcherx.packages.${system}.osx-arm64
+launcherx.packages.${system}.win-x64
+launcherx.packages.${system}.win-arm64
 ```
 
-## Run
+| Attribute | Runtime | Notes |
+| --- | --- | --- |
+| `launcherx` / `default` | auto | Picked from the host platform |
+| `linux-x64` | `linux-x64` | patchelf + UPX-decompressed |
+| `linux-arm64` | `linux-arm64` | patchelf + UPX-decompressed |
+| `osx-x64` | `osx-x64` | `.app` bundle |
+| `osx-arm64` | `osx-arm64` | `.app` bundle |
+| `win-x64` | `win-x64` | unpacked only, for distribution |
+| `win-arm64` | `win-arm64` | unpacked only, for distribution |
 
-On NixOS, the package patches the upstream Linux binary with `patchelf` so it runs out-of-the-box.
+The Linux binaries are UPX-compressed upstream; this flake decompresses them and
+patches the interpreter and rpath so they run out-of-the-box on NixOS.
+
+## Updating
+
+Build artifacts are pinned in `package/default.nix`. To bump them, regenerate the
+list with:
+
+```console
+$ dotnet run generator.cs
+```
+
+and update the URLs/hashes (and per-runtime `version`) accordingly.
