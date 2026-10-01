@@ -31,40 +31,44 @@
 { runtime ? null }:
 
 let
-  version = "unstable-2026-10-01";
-
   # Pinned build artifacts (zip) for each runtime.
   builds = {
     linux-x64 = {
       url = "https://api.corona.studio/Build/get/68817072-c920-4868-96b2-3267c2db89cd";
       hash = "sha256-s5TYUAO4l+2eQXkzIDvheAIL67pt4K83RXPfoHIGYyk=";
       kind = "linux";
+      version = "stable-2026-10-01T05-31-38";
     };
     linux-arm64 = {
       url = "https://api.corona.studio/Build/get/de5a3df4-d51e-4156-92cc-07028c4ea4f3";
       hash = "sha256-AcUprG0X+5q7YcU43o7LMlN0nS2jzf/SHe/tnCNj2a8=";
       kind = "linux";
+      version = "stable-2026-10-01T05-31-38";
     };
     osx-x64 = {
       url = "https://api.corona.studio/Build/get/b8cb35df-de1c-45e1-9eb0-2775a3ad0aab";
       hash = "sha256-GlBknz2kvKRdMF2EwtIZsKuYXoR3+AUsy0REBoPlevU=";
       kind = "darwin";
+      version = "stable-2026-10-01T05-31-38";
     };
     osx-arm64 = {
       url = "https://api.corona.studio/Build/get/7e63b58f-6413-4c0a-a279-0e4cffc97db2";
       hash = "sha256-JADV46lgvGOFqqfEX0FO9nOwrUbECEFGWWH2pBd9u9M=";
       kind = "darwin";
+      version = "stable-2026-10-01T05-31-38";
     };
     # Windows artifacts: packaged for distribution, not runnable on nix.
     win-x64 = {
       url = "https://api.corona.studio/Build/get/8f9d0ff7-6b4a-46cf-960d-fae6d976f0b0";
       hash = "sha256-JH4Akq5iwqGm5aupdBiHXjxpY1j1EMiCax4QD6+dHnk=";
       kind = "windows";
+      version = "stable-2026-10-01T05-31-38";
     };
     win-arm64 = {
       url = "https://api.corona.studio/Build/get/0e82bd85-b78f-41f8-8c30-c4762672bf6e";
       hash = "sha256-TkrQXynJ//bofDX4YRkkPvLIVHN/uSNmimTmb0r3ekU=";
       kind = "windows";
+      version = "stable-2026-10-01T05-31-38";
     };
   };
 
@@ -77,6 +81,7 @@ let
 
   runtime' = if runtime == null then defaultRuntime else runtime;
   build = builds.${runtime'} or (throw "Unknown runtime: ${runtime'}");
+  version = build.version;
 
   zip = fetchurl {
     inherit (build) url hash;
