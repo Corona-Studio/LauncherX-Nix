@@ -3,6 +3,7 @@
   stdenv,
   stdenvNoCC,
   fetchurl,
+  makeWrapper,
   unzip,
   upx,
   patchelf,
@@ -14,11 +15,18 @@
   libSM,
   libX11,
   libXcursor,
+  libXdamage,
   libXext,
   libXfixes,
   libXi,
+  libXinerama,
   libXrandr,
+  libXrender,
+  libxcb,
+  libxkbcommon,
+  mesa,
   openssl,
+  wayland,
 }:
 
 let
@@ -33,9 +41,7 @@ let
     name = "launcherx-${system}.zip";
   };
 
-  rpath = lib.makeLibraryPath [
-    stdenv.cc.cc.lib
-    stdenv.cc.libc
+  libs = [
     icu
     fontconfig
     freetype
@@ -44,12 +50,27 @@ let
     libSM
     libX11
     libXcursor
+    libXdamage
     libXext
     libXfixes
     libXi
+    libXinerama
     libXrandr
+    libXrender
+    libxcb
+    libxkbcommon
+    mesa
     openssl
+    wayland
   ];
+
+  rpath = lib.makeLibraryPath (
+    [
+      stdenv.cc.cc.lib
+      stdenv.cc.libc
+    ]
+    ++ libs
+  );
   interpreter = stdenv.cc.bintools.dynamicLinker;
 in
 stdenvNoCC.mkDerivation {
@@ -62,20 +83,28 @@ stdenvNoCC.mkDerivation {
     unzip
     patchelf
     upx
+    makeWrapper
   ];
 
   installPhase = ''
     runHook preInstall
 
-    mkdir -p "$out/bin"
-    unzip -q "${zip}" -d "$out/bin"
-    chmod +x "$out/bin/LauncherX"
-    upx -d "$out/bin/LauncherX"
+    mkdir -p "$out/libexec/launcherx" "$out/bin"
+    unzip -q "${zip}" -d "$out/libexec/launcherx"
+    chmod +x "$out/libexec/launcherx/LauncherX"
+    upx -d "$out/libexec/launcherx/LauncherX"
 
     patchelf \
       --set-interpreter "${interpreter}" \
       --set-rpath "${rpath}" \
-      "$out/bin/LauncherX"
+      "$out/libexec/launcherx/LauncherX"
+
+    # The rpath above only helps LauncherX itself. The game is a separate java
+    # process spawned by LauncherX, so it finds libs via the inherited
+    # LD_LIBRARY_PATH instead.
+    makeWrapper "$out/libexec/launcherx/LauncherX" "$out/bin/LauncherX" \
+      --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath libs}" \
+      --set LIBGL_DRIVERS_PATH "${mesa}/lib"
 
     runHook postInstall
   '';
