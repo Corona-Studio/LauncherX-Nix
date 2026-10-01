@@ -89,41 +89,30 @@ stdenvNoCC.mkDerivation {
     upx
   ];
 
-  installPhase =
-    if stdenv.hostPlatform.isDarwin then
-      ''
-        runHook preInstall
-        mkdir -p "$out/Applications" "$out/bin"
-        unzip -q "${zip}" -d "$out/Applications"
-        chmod +x "$out/Applications/LauncherX.app/Contents/MacOS/LauncherX"
-        ln -s "$out/Applications/LauncherX.app/Contents/MacOS/LauncherX" "$out/bin/launcherx"
-        runHook postInstall
-      ''
-    else
-      ''
-        runHook preInstall
+  installPhase = ''
+    runHook preInstall
 
-        mkdir -p "$out/opt/launcherx" "$out/bin"
-        unzip -q "${zip}" -d "$out/opt/launcherx"
-        chmod +x "$out/opt/launcherx/LauncherX"
+    mkdir -p "$out/opt/launcherx" "$out/bin"
+    unzip -q "${zip}" -d "$out/opt/launcherx"
+    chmod +x "$out/opt/launcherx/LauncherX"
 
-        # Upstream ships UPX-compressed binaries, which have no section headers
-        # and cannot be patched. Decompress first so patchelf works.
-        upx -d "$out/opt/launcherx/LauncherX"
+    # Upstream ships UPX-compressed binaries, which have no section headers
+    # and cannot be patched. Decompress first so patchelf works.
+    upx -d "$out/opt/launcherx/LauncherX"
 
-        # Make the upstream binary runnable on NixOS.
-        patchelf \
-          --set-interpreter "${interpreter}" \
-          --set-rpath "${rpath}" \
-          "$out/opt/launcherx/LauncherX"
+    # Make the upstream binary runnable on NixOS.
+    patchelf \
+      --set-interpreter "${interpreter}" \
+      --set-rpath "${rpath}" \
+      "$out/opt/launcherx/LauncherX"
 
-        # NativeAOT apps dlopen some libs (ICU, OpenSSL, X11) at runtime; keep a
-        # broad LD_LIBRARY_PATH as a safety net in addition to the rpath.
-        makeWrapper "$out/opt/launcherx/LauncherX" "$out/bin/launcherx" \
-          --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath runtimeLibs}"
+    # NativeAOT apps dlopen some libs (ICU, OpenSSL, X11) at runtime; keep a
+    # broad LD_LIBRARY_PATH as a safety net in addition to the rpath.
+    makeWrapper "$out/opt/launcherx/LauncherX" "$out/bin/launcherx" \
+      --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath runtimeLibs}"
 
-        runHook postInstall
-      '';
+    runHook postInstall
+  '';
 
   meta = {
     description = "LauncherX prebuilt binaries";
