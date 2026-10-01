@@ -40,7 +40,9 @@ let
     name = "launcherx-${system}.zip";
   };
 
-  runtimeLibs = [
+  rpath = lib.makeLibraryPath [
+    stdenv.cc.cc.lib
+    stdenv.cc.libc
     icu
     fontconfig
     freetype
@@ -62,14 +64,6 @@ let
     openssl
     wayland
   ];
-
-  rpath = lib.makeLibraryPath (
-    [
-      stdenv.cc.cc.lib
-      stdenv.cc.libc
-    ]
-    ++ runtimeLibs
-  );
   interpreter = stdenv.cc.bintools.dynamicLinker;
 in
 stdenvNoCC.mkDerivation {
