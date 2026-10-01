@@ -27,11 +27,10 @@
   mesa,
   openssl,
   wayland,
-  runtime ? null,
 }:
 
 let
-  # Pinned build artifacts (zip) for each runtime.
+  # Pinned build artifacts (zip) for each native runtime.
   builds = {
     linux-x64 = {
       url = "https://api.corona.studio/Build/get/68817072-c920-4868-96b2-3267c2db89cd";
@@ -57,22 +56,10 @@ let
       kind = "darwin";
       version = "stable-2026-10-01T05-31-38";
     };
-    # Windows artifacts: packaged for distribution, not runnable on nix.
-    win-x64 = {
-      url = "https://api.corona.studio/Build/get/8f9d0ff7-6b4a-46cf-960d-fae6d976f0b0";
-      hash = "sha256-JH4Akq5iwqGm5aupdBiHXjxpY1j1EMiCax4QD6+dHnk=";
-      kind = "windows";
-      version = "stable-2026-10-01T05-31-38";
-    };
-    win-arm64 = {
-      url = "https://api.corona.studio/Build/get/0e82bd85-b78f-41f8-8c30-c4762672bf6e";
-      hash = "sha256-TkrQXynJ//bofDX4YRkkPvLIVHN/uSNmimTmb0r3ekU=";
-      kind = "windows";
-      version = "stable-2026-10-01T05-31-38";
-    };
   };
 
-  defaultRuntime =
+  # The runtime matching the host platform, or null if there is none.
+  runtime =
     if stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isx86_64 then
       "linux-x64"
     else if stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isAarch64 then
@@ -84,28 +71,23 @@ let
     else
       null;
 
-  runtime' = if runtime == null then defaultRuntime else runtime;
-  build =
-    if runtime' == null then null else builds.${runtime'} or (throw "Unknown runtime: ${runtime'}");
-
-  # Platforms that have a matching native prebuilt binary (for auto-detection).
-  nativePlatforms = [
-    "x86_64-linux"
-    "aarch64-linux"
-    "x86_64-darwin"
-    "aarch64-darwin"
-  ];
+  build = builds.${runtime} or null;
 
   meta = {
     description = "LauncherX prebuilt binaries";
     homepage = "https://github.com/Corona-Studio/LauncherX";
     license = lib.licenses.mit;
     mainProgram = "launcherx";
-    platforms = nativePlatforms;
+    platforms = [
+      "x86_64-linux"
+      "aarch64-linux"
+      "x86_64-darwin"
+      "aarch64-darwin"
+    ];
   };
 in
 if build == null then
-  # No prebuilt binary exists for this platform / runtime.
+  # No prebuilt binary exists for this platform.
   stdenvNoCC.mkDerivation {
     pname = "launcherx";
     version = "unsupported";
@@ -117,7 +99,7 @@ else
 
     zip = fetchurl {
       inherit (build) url hash;
-      name = "launcherx-${runtime'}.zip";
+      name = "launcherx-${runtime}.zip";
     };
 
     runtimeLibs = [
@@ -197,20 +179,13 @@ else
 
           runHook postInstall
         ''
-      else if build.kind == "darwin" then
+      else
         ''
           runHook preInstall
           mkdir -p "$out/Applications" "$out/bin"
           unzip -q "${zip}" -d "$out/Applications"
           chmod +x "$out/Applications/LauncherX.app/Contents/MacOS/LauncherX"
           ln -s "$out/Applications/LauncherX.app/Contents/MacOS/LauncherX" "$out/bin/launcherx"
-          runHook postInstall
-        ''
-      else
-        ''
-          runHook preInstall
-          mkdir -p "$out/share/launcherx-windows/${runtime'}"
-          unzip -q "${zip}" -d "$out/share/launcherx-windows/${runtime'}"
           runHook postInstall
         '';
 

@@ -14,7 +14,8 @@ Nix packaging for [LauncherX](https://github.com/Corona-Studio/LauncherX) prebui
 
 ## Package
 
-The default package (`launcherx`) auto-selects the runtime matching your platform:
+The package (`launcherx`, also exposed as `default`) auto-selects the runtime
+matching your platform:
 
 ```nix
 launcherx.packages.${system}.launcherx
@@ -26,29 +27,10 @@ Or try it directly from the CLI:
 $ nix shell github:yueyinqiu/LauncherX-Nix
 ```
 
-Each runtime is also pinned individually:
-
-```nix
-launcherx.packages.${system}.linux-x64
-launcherx.packages.${system}.linux-arm64
-launcherx.packages.${system}.osx-x64
-launcherx.packages.${system}.osx-arm64
-launcherx.packages.${system}.win-x64
-launcherx.packages.${system}.win-arm64
-```
-
-| Attribute               | Runtime       | Notes                           |
-| ----------------------- | ------------- | ------------------------------- |
-| `launcherx` / `default` | auto          | Picked from the host platform   |
-| `linux-x64`             | `linux-x64`   | patchelf + UPX-decompressed     |
-| `linux-arm64`           | `linux-arm64` | patchelf + UPX-decompressed     |
-| `osx-x64`               | `osx-x64`     | `.app` bundle                   |
-| `osx-arm64`             | `osx-arm64`   | `.app` bundle                   |
-| `win-x64`               | `win-x64`     | unpacked only, for distribution |
-| `win-arm64`             | `win-arm64`   | unpacked only, for distribution |
-
-The Linux binaries are UPX-compressed upstream; this flake decompresses them and
-patches the interpreter and rpath so they run out-of-the-box on NixOS.
+Supported platforms are `x86_64-linux`, `aarch64-linux`, `x86_64-darwin` and
+`aarch64-darwin`. The Linux binaries are UPX-compressed upstream; this flake
+decompresses them and patches the interpreter and rpath so they run
+out-of-the-box on NixOS.
 
 ## Updating
 
