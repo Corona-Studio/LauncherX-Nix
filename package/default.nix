@@ -97,7 +97,7 @@ stdenvNoCC.mkDerivation {
   meta = {
     description = "LauncherX prebuilt binaries";
     homepage = "https://corona.studio/lx";
-    license = lib.licenses.unfree;    # mit soon...
+    license = lib.licenses.mit;
     mainProgram = "LauncherX";
     platforms = builtins.attrNames sources;
   };
