@@ -3,13 +3,16 @@
   stdenv,
   stdenvNoCC,
   fetchurl,
+  addDriverRunpath,
   makeWrapper,
   unzip,
   upx,
   patchelf,
-  icu,
+  alsa-lib,
   fontconfig,
   freetype,
+  glfw3-minecraft,
+  icu,
   libGL,
   libgbm,
   libICE,
@@ -25,10 +28,13 @@
   libXrender,
   libxcb,
   libxkbcommon,
-  mesa,
+  libpulseaudio,
+  libxtst,
+  libxxf86vm,
+  openal,
   openssl,
-  wayland,
   vulkan-loader,
+  wayland,
 }:
 
 let
@@ -43,6 +49,9 @@ let
     name = "launcherx-${system}.zip";
   };
 
+  # Libraries needed by LauncherX itself (Avalonia/.NET) and by the spawned
+  # Minecraft game (java + LWJGL + SDL3 + audio). GPU drivers themselves come
+  # from /run/opengl-driver below, not here.
   libs = [
     icu
     fontconfig
@@ -62,10 +71,15 @@ let
     libXrender
     libxcb
     libxkbcommon
-    mesa
+    openal
     openssl
     wayland
     vulkan-loader
+    glfw3-minecraft
+    alsa-lib
+    libpulseaudio
+    libxtst
+    libxxf86vm
   ];
 
   rpath = lib.makeLibraryPath (
@@ -103,10 +117,13 @@ stdenvNoCC.mkDerivation {
       --set-rpath "${rpath}" \
       "$out/libexec/launcherx/LauncherX"
 
+    # The rpath above only helps LauncherX itself. The game is a separate java
+    # process spawned by LauncherX, so it finds libs via the inherited
+    # LD_LIBRARY_PATH instead. ${addDriverRunpath.driverLink}/lib is
+    # /run/opengl-driver/lib, which holds all GPU vendor drivers (GL + Vulkan)
+    # and is resolved generically by nixpkgs' libglvnd / vulkan-loader.
     makeWrapper "$out/libexec/launcherx/LauncherX" "$out/bin/LauncherX" \
-      --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath libs}" \
-      --set LIBGL_DRIVERS_PATH "${mesa}/lib" \
-      --set VK_DRIVER_FILES "${mesa}/share/vulkan/icd.d/intel_icd.x86_64.json:${mesa}/share/vulkan/icd.d/lvp_icd.x86_64.json"
+      --prefix LD_LIBRARY_PATH : "${addDriverRunpath.driverLink}/lib:${lib.makeLibraryPath libs}"
 
     runHook postInstall
   '';
