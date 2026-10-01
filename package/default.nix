@@ -49,9 +49,6 @@ let
     name = "launcherx-${system}.zip";
   };
 
-  # Libraries needed by LauncherX itself (Avalonia/.NET) and by the spawned
-  # Minecraft game (java + LWJGL + SDL3 + audio). GPU drivers themselves come
-  # from /run/opengl-driver below, not here.
   libs = [
     icu
     fontconfig
@@ -117,11 +114,6 @@ stdenvNoCC.mkDerivation {
       --set-rpath "${rpath}" \
       "$out/libexec/launcherx/LauncherX"
 
-    # The rpath above only helps LauncherX itself. The game is a separate java
-    # process spawned by LauncherX, so it finds libs via the inherited
-    # LD_LIBRARY_PATH instead. ${addDriverRunpath.driverLink}/lib is
-    # /run/opengl-driver/lib, which holds all GPU vendor drivers (GL + Vulkan)
-    # and is resolved generically by nixpkgs' libglvnd / vulkan-loader.
     makeWrapper "$out/libexec/launcherx/LauncherX" "$out/bin/LauncherX" \
       --prefix LD_LIBRARY_PATH : "${addDriverRunpath.driverLink}/lib:${lib.makeLibraryPath libs}"
 
