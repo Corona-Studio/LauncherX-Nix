@@ -95,7 +95,7 @@ stdenvNoCC.mkDerivation {
   '';
 
   meta = {
-    description = "LauncherX prebuilt binaries";
+    description = "A next-gen Minecraft launcher with powerful features and a sleek UI.";
     homepage = "https://corona.studio/lx";
     license = lib.licenses.mit;
     mainProgram = "LauncherX";
