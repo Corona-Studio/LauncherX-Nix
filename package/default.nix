@@ -58,10 +58,9 @@ let
     builds.${stdenv.hostPlatform.system}
       or (throw "Unsupported system: ${stdenv.hostPlatform.system}");
 
-  version = build.version;
-
   zip = fetchurl {
-    inherit (build) url hash;
+    url = build.url;
+    hash = build.hash;
     name = "launcherx-${stdenv.hostPlatform.system}.zip";
   };
 
@@ -97,18 +96,10 @@ let
     ++ runtimeLibs
   );
   interpreter = stdenv.cc.bintools.dynamicLinker;
-
-  meta = {
-    description = "LauncherX prebuilt binaries";
-    homepage = "https://github.com/Corona-Studio/LauncherX";
-    license = lib.licenses.mit;
-    mainProgram = "launcherx";
-    platforms = builtins.attrNames builds;
-  };
 in
 stdenvNoCC.mkDerivation {
   pname = "launcherx";
-  inherit version;
+  version = build.version;
 
   dontUnpack = true;
   # We patch ELF binaries ourselves (interpreter + rpath) and keep the full rpath
@@ -160,5 +151,11 @@ stdenvNoCC.mkDerivation {
         runHook postInstall
       '';
 
-  inherit meta;
+  meta = {
+    description = "LauncherX prebuilt binaries";
+    homepage = "https://github.com/Corona-Studio/LauncherX";
+    license = lib.licenses.mit;
+    mainProgram = "launcherx";
+    platforms = builtins.attrNames builds;
+  };
 }
