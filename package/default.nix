@@ -14,18 +14,11 @@
   libSM,
   libX11,
   libXcursor,
-  libXdamage,
   libXext,
   libXfixes,
   libXi,
-  libXinerama,
   libXrandr,
-  libXrender,
-  libxcb,
-  libxkbcommon,
-  mesa,
   openssl,
-  wayland,
 }:
 
 let
@@ -51,18 +44,11 @@ let
     libSM
     libX11
     libXcursor
-    libXdamage
     libXext
     libXfixes
     libXi
-    libXinerama
     libXrandr
-    libXrender
-    libxcb
-    libxkbcommon
-    mesa
     openssl
-    wayland
   ];
   interpreter = stdenv.cc.bintools.dynamicLinker;
 in
