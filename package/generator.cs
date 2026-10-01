@@ -12,14 +12,12 @@ using CliWrap.Buffered;
 
 const string Api = "https://api.corona.studio/Build/get/latest/all/stable";
 
-// Map upstream runtime names to Nix systems. Windows builds are intentionally
-// skipped: they are packaged for distribution only.
+// Only Linux is packaged (NixOS needs the binary patched); macOS and Windows
+// builds are intentionally skipped.
 var systems = new Dictionary<string, string>
 {
     ["linux-x64"] = "x86_64-linux",
     ["linux-arm64"] = "aarch64-linux",
-    ["osx-x64"] = "x86_64-darwin",
-    ["osx-arm64"] = "aarch64-darwin",
 };
 
 using var client = new HttpClient();

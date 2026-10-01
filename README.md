@@ -27,10 +27,9 @@ Or try it directly from the CLI:
 $ nix shell github:yueyinqiu/LauncherX-Nix
 ```
 
-Supported platforms are `x86_64-linux`, `aarch64-linux`, `x86_64-darwin` and
-`aarch64-darwin`. The Linux binaries are UPX-compressed upstream; this flake
-decompresses them and patches the interpreter and rpath so they run
-out-of-the-box on NixOS.
+Supported platforms are `x86_64-linux` and `aarch64-linux`. The upstream Linux
+binaries are UPX-compressed; this flake decompresses them and patches the
+interpreter and rpath so they run out-of-the-box on NixOS.
 
 ## Updating
 
