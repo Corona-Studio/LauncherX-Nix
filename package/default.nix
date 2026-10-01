@@ -11,6 +11,7 @@
   fontconfig,
   freetype,
   libGL,
+  libgbm,
   libICE,
   libSM,
   libX11,
@@ -27,6 +28,7 @@
   mesa,
   openssl,
   wayland,
+  vulkan-loader,
 }:
 
 let
@@ -46,6 +48,7 @@ let
     fontconfig
     freetype
     libGL
+    libgbm
     libICE
     libSM
     libX11
@@ -62,6 +65,7 @@ let
     mesa
     openssl
     wayland
+    vulkan-loader
   ];
 
   rpath = lib.makeLibraryPath (
@@ -104,7 +108,8 @@ stdenvNoCC.mkDerivation {
     # LD_LIBRARY_PATH instead.
     makeWrapper "$out/libexec/launcherx/LauncherX" "$out/bin/LauncherX" \
       --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath libs}" \
-      --set LIBGL_DRIVERS_PATH "${mesa}/lib"
+      --set LIBGL_DRIVERS_PATH "${mesa}/lib" \
+      --set VK_DRIVER_FILES "${mesa}/share/vulkan/icd.d/intel_icd.x86_64.json:${mesa}/share/vulkan/icd.d/lvp_icd.x86_64.json"
 
     runHook postInstall
   '';
