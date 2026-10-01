@@ -34,11 +34,13 @@ out-of-the-box on NixOS.
 
 ## Updating
 
-Build artifacts are pinned in `package/default.nix`. To bump them, regenerate the
-list with:
+Build artifacts are pinned in `package/builds.nix` (generated, do not edit
+manually). To regenerate it against the latest stable builds:
 
 ```console
 $ dotnet run generator.cs
 ```
 
-and update the URLs/hashes (and per-runtime `version`) accordingly.
+The script queries Corona Studio's build API, picks the latest build per
+platform, and fetches each zip through `nix store prefetch-file` to compute its
+hash.
