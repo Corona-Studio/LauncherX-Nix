@@ -72,107 +72,131 @@ let
   };
 
   defaultRuntime =
+    if stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isx86_64 then "linux-x64" else
     if stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isAarch64 then "linux-arm64" else
-    if stdenv.hostPlatform.isLinux then "linux-x64" else
+    if stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64 then "osx-x64" else
     if stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64 then "osx-arm64" else
-    if stdenv.hostPlatform.isDarwin then "osx-x64" else
-    throw "Unsupported host platform";
+    null;
 
   runtime' = if runtime == null then defaultRuntime else runtime;
-  build = builds.${runtime'} or (throw "Unknown runtime: ${runtime'}");
-  version = build.version;
+  build =
+    if runtime' == null then null
+    else builds.${runtime'} or (throw "Unknown runtime: ${runtime'}");
 
-  zip = fetchurl {
-    inherit (build) url hash;
-    name = "launcherx-${runtime'}.zip";
-  };
-
-  runtimeLibs = [
-    icu
-    fontconfig
-    freetype
-    libGL
-    libICE
-    libSM
-    libX11
-    libXcursor
-    libXdamage
-    libXext
-    libXfixes
-    libXi
-    libXinerama
-    libXrandr
-    libXrender
-    libxcb
-    libxkbcommon
-    mesa
-    openssl
-    wayland
+  # Platforms that have a matching native prebuilt binary (for auto-detection).
+  nativePlatforms = [
+    "x86_64-linux"
+    "aarch64-linux"
+    "x86_64-darwin"
+    "aarch64-darwin"
   ];
-
-  # Generic upstream linux binaries need a proper dynamic linker + rpath on NixOS.
-  rpath = lib.makeLibraryPath ([ stdenv.cc.cc.lib stdenv.cc.libc ] ++ runtimeLibs);
-  interpreter = stdenv.cc.bintools.dynamicLinker;
-in
-stdenvNoCC.mkDerivation {
-  pname = "launcherx";
-  inherit version;
-
-  dontUnpack = true;
-  # We patch ELF binaries ourselves (interpreter + rpath) and keep the full rpath
-  # because the app dlopens some libs (e.g. ICU, OpenSSL, X11) at runtime, so
-  # stdenv's rpath shrinking would incorrectly prune them.
-  dontPatchELF = true;
-  nativeBuildInputs = [ unzip ] ++ lib.optionals (build.kind == "linux") [ patchelf makeWrapper upx ];
-
-  installPhase =
-    if build.kind == "linux" then
-      ''
-        runHook preInstall
-
-        mkdir -p "$out/opt/launcherx" "$out/bin"
-        unzip -q "${zip}" -d "$out/opt/launcherx"
-        chmod +x "$out/opt/launcherx/LauncherX"
-
-        # Upstream ships UPX-compressed binaries, which have no section headers
-        # and cannot be patched. Decompress first so patchelf works.
-        upx -d "$out/opt/launcherx/LauncherX"
-
-        # Make the upstream binary runnable on NixOS.
-        patchelf \
-          --set-interpreter "${interpreter}" \
-          --set-rpath "${rpath}" \
-          "$out/opt/launcherx/LauncherX"
-
-        # NativeAOT apps dlopen some libs (ICU, OpenSSL, X11) at runtime; keep a
-        # broad LD_LIBRARY_PATH as a safety net in addition to the rpath.
-        makeWrapper "$out/opt/launcherx/LauncherX" "$out/bin/launcherx" \
-          --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath runtimeLibs}"
-
-        runHook postInstall
-      ''
-    else if build.kind == "darwin" then
-      ''
-        runHook preInstall
-        mkdir -p "$out/Applications" "$out/bin"
-        unzip -q "${zip}" -d "$out/Applications"
-        chmod +x "$out/Applications/LauncherX.app/Contents/MacOS/LauncherX"
-        ln -s "$out/Applications/LauncherX.app/Contents/MacOS/LauncherX" "$out/bin/launcherx"
-        runHook postInstall
-      ''
-    else
-      ''
-        runHook preInstall
-        mkdir -p "$out/share/launcherx-windows/${runtime'}"
-        unzip -q "${zip}" -d "$out/share/launcherx-windows/${runtime'}"
-        runHook postInstall
-      '';
 
   meta = {
     description = "LauncherX prebuilt binaries";
     homepage = "https://github.com/Corona-Studio/LauncherX";
     license = lib.licenses.mit;
     mainProgram = "launcherx";
-    platforms = lib.platforms.all;
+    # Explicit `runtime` overrides build anywhere (fetch + unzip + patch);
+    # the auto-detected default only exists on native platforms.
+    platforms = if runtime == null then nativePlatforms else lib.platforms.all;
   };
-}
+in
+if build == null then
+  # No prebuilt binary exists for this platform / runtime.
+  stdenvNoCC.mkDerivation {
+    pname = "launcherx";
+    version = "unsupported";
+    inherit meta;
+  }
+else
+  let
+    version = build.version;
+
+    zip = fetchurl {
+      inherit (build) url hash;
+      name = "launcherx-${runtime'}.zip";
+    };
+
+    runtimeLibs = [
+      icu
+      fontconfig
+      freetype
+      libGL
+      libICE
+      libSM
+      libX11
+      libXcursor
+      libXdamage
+      libXext
+      libXfixes
+      libXi
+      libXinerama
+      libXrandr
+      libXrender
+      libxcb
+      libxkbcommon
+      mesa
+      openssl
+      wayland
+    ];
+
+    # Generic upstream linux binaries need a proper dynamic linker + rpath on NixOS.
+    rpath = lib.makeLibraryPath ([ stdenv.cc.cc.lib stdenv.cc.libc ] ++ runtimeLibs);
+    interpreter = stdenv.cc.bintools.dynamicLinker;
+  in
+  stdenvNoCC.mkDerivation {
+    pname = "launcherx";
+    inherit version;
+
+    dontUnpack = true;
+    # We patch ELF binaries ourselves (interpreter + rpath) and keep the full rpath
+    # because the app dlopens some libs (e.g. ICU, OpenSSL, X11) at runtime, so
+    # stdenv's rpath shrinking would incorrectly prune them.
+    dontPatchELF = true;
+    nativeBuildInputs = [ unzip ] ++ lib.optionals (build.kind == "linux") [ patchelf makeWrapper upx ];
+
+    installPhase =
+      if build.kind == "linux" then
+        ''
+          runHook preInstall
+
+          mkdir -p "$out/opt/launcherx" "$out/bin"
+          unzip -q "${zip}" -d "$out/opt/launcherx"
+          chmod +x "$out/opt/launcherx/LauncherX"
+
+          # Upstream ships UPX-compressed binaries, which have no section headers
+          # and cannot be patched. Decompress first so patchelf works.
+          upx -d "$out/opt/launcherx/LauncherX"
+
+          # Make the upstream binary runnable on NixOS.
+          patchelf \
+            --set-interpreter "${interpreter}" \
+            --set-rpath "${rpath}" \
+            "$out/opt/launcherx/LauncherX"
+
+          # NativeAOT apps dlopen some libs (ICU, OpenSSL, X11) at runtime; keep a
+          # broad LD_LIBRARY_PATH as a safety net in addition to the rpath.
+          makeWrapper "$out/opt/launcherx/LauncherX" "$out/bin/launcherx" \
+            --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath runtimeLibs}"
+
+          runHook postInstall
+        ''
+      else if build.kind == "darwin" then
+        ''
+          runHook preInstall
+          mkdir -p "$out/Applications" "$out/bin"
+          unzip -q "${zip}" -d "$out/Applications"
+          chmod +x "$out/Applications/LauncherX.app/Contents/MacOS/LauncherX"
+          ln -s "$out/Applications/LauncherX.app/Contents/MacOS/LauncherX" "$out/bin/launcherx"
+          runHook postInstall
+        ''
+      else
+        ''
+          runHook preInstall
+          mkdir -p "$out/share/launcherx-windows/${runtime'}"
+          unzip -q "${zip}" -d "$out/share/launcherx-windows/${runtime'}"
+          runHook postInstall
+        '';
+
+    inherit meta;
+  }
