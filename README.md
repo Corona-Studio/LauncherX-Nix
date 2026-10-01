@@ -38,7 +38,7 @@ Build artifacts are pinned in `package/builds.nix` (generated, do not edit
 manually). To regenerate it against the latest stable builds:
 
 ```console
-$ dotnet run generator.cs
+$ dotnet run package/generator.cs
 ```
 
 The script queries Corona Studio's build API, picks the latest build per

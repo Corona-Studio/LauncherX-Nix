@@ -1,10 +1,14 @@
 #!
 
-using System.Diagnostics;
+#:package CliWrap@3.10.4
+
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+
+using CliWrap;
+using CliWrap.Buffered;
 
 const string Api = "https://api.corona.studio/Build/get/latest/all/stable";
 
@@ -34,7 +38,12 @@ sb.AppendLine("{");
 foreach (var b in latest)
 {
     var url = $"https://api.corona.studio/Build/get/{b.Id}";
-    var hash = await PrefetchHashAsync(url);
+    var result = await Cli.Wrap("nix")
+        .WithArguments([ "store", "prefetch-file", "--json", url ])
+        .WithValidation(CommandResultValidation.ZeroExitCode)
+        .ExecuteBufferedAsync();
+    var hash = JsonSerializer.Deserialize(result.StandardOutput, SerializerContext.Default.PrefetchResult)!.Hash;
+
     sb.AppendLine($"  {systems[b.Runtime]} = {{");
     sb.AppendLine($"    url = \"{url}\";");
     sb.AppendLine($"    hash = \"{hash}\";");
@@ -45,22 +54,6 @@ sb.AppendLine("}");
 
 await File.WriteAllTextAsync("package/builds.nix", sb.ToString());
 Console.WriteLine("Wrote package/builds.nix");
-
-async Task<string> PrefetchHashAsync(string url)
-{
-    var psi = new ProcessStartInfo("nix", ["store", "prefetch-file", "--json", url])
-    {
-        RedirectStandardOutput = true,
-    };
-    using var proc = Process.Start(psi)!;
-    var stdout = await proc.StandardOutput.ReadToEndAsync();
-    await proc.WaitForExitAsync();
-    if (proc.ExitCode != 0)
-    {
-        throw new Exception($"nix store prefetch-file failed ({proc.ExitCode}) for {url}");
-    }
-    return JsonSerializer.Deserialize(stdout, SerializerContext.Default.PrefetchResult)!.Hash;
-}
 
 sealed record Build(
     [property: JsonPropertyName("id")] string Id,
