@@ -82,8 +82,6 @@ stdenvNoCC.mkDerivation {
   dontPatchELF = true;
   nativeBuildInputs = [
     unzip
-  ]
-  ++ lib.optionals stdenv.hostPlatform.isLinux [
     patchelf
     makeWrapper
     upx
