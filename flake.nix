@@ -31,7 +31,7 @@
         {
           default = {
             type = "app";
-            program = "${pkg}/bin/launcherx";
+            program = "${pkg}/bin/LauncherX";
           };
         }
       );

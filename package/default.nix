@@ -89,14 +89,13 @@ stdenvNoCC.mkDerivation {
 
     mkdir -p "$out/bin"
     unzip -q "${zip}" -d "$out/bin"
-    mv "$out/bin/LauncherX" "$out/bin/launcherx"
-    chmod +x "$out/bin/launcherx"
-    upx -d "$out/bin/launcherx"
+    chmod +x "$out/bin/LauncherX"
+    upx -d "$out/bin/LauncherX"
 
     patchelf \
       --set-interpreter "${interpreter}" \
       --set-rpath "${rpath}" \
-      "$out/bin/launcherx"
+      "$out/bin/LauncherX"
 
     runHook postInstall
   '';
@@ -105,7 +104,7 @@ stdenvNoCC.mkDerivation {
     description = "LauncherX prebuilt binaries";
     homepage = "https://github.com/Corona-Studio/LauncherX";
     license = lib.licenses.mit;
-    mainProgram = "launcherx";
+    mainProgram = "LauncherX";
     platforms = builtins.attrNames sources;
   };
 }
