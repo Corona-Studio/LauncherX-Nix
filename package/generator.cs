@@ -50,8 +50,8 @@ foreach (var b in latest)
 }
 sb.AppendLine("}");
 
-await File.WriteAllTextAsync("package/builds.nix", sb.ToString());
-Console.WriteLine("Wrote package/builds.nix");
+await File.WriteAllTextAsync("package/sources.nix", sb.ToString());
+Console.WriteLine("Wrote package/sources.nix");
 
 sealed record Build(
     [property: JsonPropertyName("id")] string Id,
