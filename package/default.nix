@@ -103,9 +103,6 @@ stdenvNoCC.mkDerivation {
       --set-rpath "${rpath}" \
       "$out/libexec/launcherx/LauncherX"
 
-    # The rpath above only helps LauncherX itself. The game is a separate java
-    # process spawned by LauncherX, so it finds libs via the inherited
-    # LD_LIBRARY_PATH instead.
     makeWrapper "$out/libexec/launcherx/LauncherX" "$out/bin/LauncherX" \
       --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath libs}" \
       --set LIBGL_DRIVERS_PATH "${mesa}/lib" \
