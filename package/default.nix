@@ -32,11 +32,11 @@ let
   sources = import ./sources.nix;
   system = stdenv.hostPlatform.system;
 
-  build = sources.${system} or (throw "Unsupported system: ${system}");
+  source = sources.${system} or (throw "Unsupported system: ${system}");
 
   zip = fetchurl {
-    url = build.url;
-    hash = build.hash;
+    url = source.url;
+    hash = source.hash;
     name = "launcherx-${system}.zip";
   };
 
@@ -68,7 +68,7 @@ let
 in
 stdenvNoCC.mkDerivation {
   pname = "launcherx";
-  version = build.version;
+  version = source.version;
 
   dontUnpack = true;
   dontPatchELF = true;
