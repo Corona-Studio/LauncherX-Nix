@@ -31,15 +31,14 @@
 
 let
   builds = import ./builds.nix;
+  system = stdenv.hostPlatform.system;
 
-  build =
-    builds.${stdenv.hostPlatform.system}
-      or (throw "Unsupported system: ${stdenv.hostPlatform.system}");
+  build = builds.${system} or (throw "Unsupported system: ${system}");
 
   zip = fetchurl {
     url = build.url;
     hash = build.hash;
-    name = "launcherx-${stdenv.hostPlatform.system}.zip";
+    name = "launcherx-${system}.zip";
   };
 
   runtimeLibs = [
@@ -80,9 +79,6 @@ stdenvNoCC.mkDerivation {
   version = build.version;
 
   dontUnpack = true;
-  # We patch ELF binaries ourselves (interpreter + rpath) and keep the full rpath
-  # because the app dlopens some libs (e.g. ICU, OpenSSL, X11) at runtime, so
-  # stdenv's rpath shrinking would incorrectly prune them.
   dontPatchELF = true;
   nativeBuildInputs = [
     unzip
