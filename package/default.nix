@@ -3,7 +3,6 @@
   stdenv,
   stdenvNoCC,
   fetchurl,
-  makeWrapper,
   unzip,
   upx,
   patchelf,
@@ -82,25 +81,22 @@ stdenvNoCC.mkDerivation {
   nativeBuildInputs = [
     unzip
     patchelf
-    makeWrapper
     upx
   ];
 
   installPhase = ''
     runHook preInstall
 
-    mkdir -p "$out/opt/launcherx" "$out/bin"
-    unzip -q "${zip}" -d "$out/opt/launcherx"
-    chmod +x "$out/opt/launcherx/LauncherX"
-    upx -d "$out/opt/launcherx/LauncherX"
+    mkdir -p "$out/bin"
+    unzip -q "${zip}" -d "$out/bin"
+    mv "$out/bin/LauncherX" "$out/bin/launcherx"
+    chmod +x "$out/bin/launcherx"
+    upx -d "$out/bin/launcherx"
 
     patchelf \
       --set-interpreter "${interpreter}" \
       --set-rpath "${rpath}" \
-      "$out/opt/launcherx/LauncherX"
-
-    makeWrapper "$out/opt/launcherx/LauncherX" "$out/bin/launcherx" \
-      --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath runtimeLibs}"
+      "$out/bin/launcherx"
 
     runHook postInstall
   '';
