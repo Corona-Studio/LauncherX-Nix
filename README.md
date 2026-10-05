@@ -7,7 +7,7 @@ Nix packaging for [LauncherX](https://github.com/Corona-Studio/LauncherX) prebui
 ```nix
 {
   inputs = {
-    launcherx.url = "github:yueyinqiu/LauncherX-Nix";
+    launcherx.url = "github:Corona-Studio/LauncherX-Nix";
   };
 }
 ```
@@ -24,7 +24,7 @@ launcherx.packages.${system}.launcherx
 Or try it directly from the CLI:
 
 ```console
-$ nix shell github:yueyinqiu/LauncherX-Nix
+$ nix shell github:Corona-Studio/LauncherX-Nix
 ```
 
 Supported platforms are `x86_64-linux` and `aarch64-linux`. The upstream Linux
